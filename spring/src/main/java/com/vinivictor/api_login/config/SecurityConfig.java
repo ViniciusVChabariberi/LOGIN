@@ -46,8 +46,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/login",
                                 "/api/login/**",
-                                "/api/usuarios",
-                                "/api/usuarios/**"
+                                "/api/usuario",
+                                "/api/usuario/**"
                         )
                         .permitAll()
                         .anyRequest()
