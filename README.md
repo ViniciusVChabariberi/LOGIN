@@ -9,5 +9,5 @@ Responsável pela gestão de usuários e segurança de todo o sistema.
 ## 📸 Evidências de Teste
 Abaixo, a demonstração da criação de usuário e geração de Token JWT via Gateway:
 
-![Cadastro de Usuário](screenshots/Cadastro_usuario.png)
+![Cadastro de Usuário](screenshots/Cadastro_Usuario.png)
 ![Geração de Token](screenshots/Token.png)
