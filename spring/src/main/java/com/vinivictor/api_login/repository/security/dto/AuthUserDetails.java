@@ -13,6 +13,9 @@ public record AuthUserDetails(
 ) implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (user.roles() == null) {
+            return java.util.Collections.emptyList();
+        }
         return user.roles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                 .collect(Collectors.toList());
