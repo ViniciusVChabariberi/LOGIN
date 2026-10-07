@@ -1,13 +1,21 @@
-# 🔐 Login & Auth Service
+# Login
 
-Responsável pela gestão de usuários e segurança de todo o sistema.
+Cadastro, login e emissao do JWT do AgendaFlow. Porta 8090.
 
-## 🚀 Endpoints Principais
-- `POST /api/usuarios`: Cadastra um novo usuário (Admin/User).
-- `POST /api/login`: Autentica e gera o Token JWT para acesso às outras APIs.
+## Endpoints (via Gateway, prefixo /api)
+- POST /auth/register  { nome, email, senha, role?, codigoAdmin? }
+- POST /auth/login     { email, senha }  -> { token, usuario } + cookie
+- POST /auth/logout
+- GET  /auth/me
+- GET|PUT|DELETE /usuarios/{id}  (proprio usuario ou ADMIN)
 
-## 📸 Evidências de Teste
-Abaixo, a demonstração da criação de usuário e geração de Token JWT via Gateway:
+## Como rodar
+1. docker compose up -d mongo (compose no repositorio do Gateway)
+2. Copie .env.example para .env e preencha JWT_SECRET (o mesmo do Gateway)
+3. mvn -pl spring spring-boot:run
 
-![Cadastro de Usuário](screenshots/Cadastro_Usuario.png)
-![Geração de Token](screenshots/Token.png)
+## Decisoes
+- Domain sem Spring; BCrypt e JWT entram por portas.
+- O Login nao valida token: quem valida e o Gateway.
+- Cadastro como ADMIN exige ADMIN_CODIGO.
+- Cookie HttpOnly + SameSite=Lax. Em producao com HTTPS passa a ser Secure.
