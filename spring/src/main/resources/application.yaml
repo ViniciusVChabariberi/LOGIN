@@ -4,9 +4,10 @@ server:
 spring:
   application:
     name: login-service
-  data:
     mongodb:
       uri: ${MONGO_URI:mongodb://localhost:27017/login_db?replicaSet=rs0}
+    data:
+      mongodb:
       auto-index-creation: true
   config:
     import: "optional:file:.env[.properties],optional:file:../.env[.properties]"
