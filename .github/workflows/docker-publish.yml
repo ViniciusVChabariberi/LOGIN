@@ -1,0 +1,90 @@
+name: Pipeline do Login
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGEM_DOCKER: agendaflow-login
+
+jobs:
+  testes:
+    name: 1. Testes
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Baixa o codigo
+        uses: actions/checkout@v4
+
+      - name: Instala o Oracle GraalVM 25
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '25'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache: 'maven'
+
+      - name: Roda os testes
+        run: mvn -B -pl domain test
+
+  imagem:
+    name: 2. Executavel nativo e imagem no Docker Hub
+    needs: testes
+    if: github.event_name != 'pull_request'
+    # ubuntu-22.04 de proposito: o executavel nativo depende da versao do glibc,
+    # e o da imagem final (debian bookworm) precisa ser igual ou mais novo que o do build.
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Baixa o codigo
+        uses: actions/checkout@v4
+
+      - name: Instala o Oracle GraalVM 25
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '25'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache: 'maven'
+
+      - name: Compila o executavel nativo
+        run: |
+          mvn -B -DskipTests -pl domain install
+          mvn -B -Pnative -DskipTests -pl spring native:compile
+
+      - name: Confere o executavel
+        run: ls -la spring/target/login
+
+      - name: Prepara o Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login no Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Constroi e envia a imagem
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGEM_DOCKER }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGEM_DOCKER }}:${{ github.sha }}
+
+  deploy:
+    name: 3. Deploy no Render
+    needs: imagem
+    runs-on: ubuntu-22.04
+    env:
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+    steps:
+      - name: Dispara o deploy
+        if: env.RENDER_DEPLOY_HOOK != ''
+        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+
+      - name: Deploy hook nao configurado
+        if: env.RENDER_DEPLOY_HOOK == ''
+        run: echo "Secret RENDER_DEPLOY_HOOK nao existe, deploy pulado."
